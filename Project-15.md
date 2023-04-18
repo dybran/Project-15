@@ -128,7 +128,9 @@ Security Group for webservers - Access to Webservers should only be allowed from
 
 ![](./images/qaw.PNG)
 
-__N/B:__ For more security, we can choose to allow __ssh__ only from the bastion server IP. This will mean that if the Ec2 instance is compromised them the access is lost.
+__N/B:__ We can choose to allow __ssh__ only from the Bastion host's IP. This will mean that if the Ec2 instance is compromised them the access is lost.
+
+This is not a good practice when applying auto scaling since it will scale out and scaling when needed and access to other Ec2 instances is denied to the bastion host.
 
 ![](./images/12.PNG)
 ![](./images/123.PNG)
