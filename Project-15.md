@@ -151,6 +151,17 @@ Purchase a domain name and Create an ACM certificate
 
 ![](./images/ac.PNG)
 
+Create record for both __tooling__ and __wordpress__
+
+For tooling
+
+![](./images/crq1.PNG)
+![](./images/crq2.PNG)
+
+For Wordpress
+
+![](./images/crw.PNG)
+
 __SETUP ELASTIC FILE SYSTEM (EFS)__
 
 Create EFS
@@ -541,9 +552,165 @@ http {
     }
 }
 ```
+
+Push to the github so we can use it to set up the nginx launch template
+
+`$ git add .`
+
+`$ git commit -m "added reverse.conf file"`
+
+`$ git push`
+
 Create the Nginx ALB to use the __reverse.conf__ file through the user data.
 
 ![](./images/gi1.PNG)
 ![](./images/gi3.PNG)
 
+For the Wordpress
+
+We configure the wordpress using the user data. First we mount the EFS access point of the wordpress using the user data configurations.
+
+![](./images/ap1.PNG)
+![](./images/ap2.PNG)
+
+Wordpress userdata
+
+```
+#!/bin/bash
+
+#mount wordpress acces point
+mkdir /var/www/
+sudo mount -t efs -o tls,accesspoint=fsap-075d969a83a54d104 fs-039addedc443b6916:/ /var/www/
+
+#Install httpd
+yum install -y httpd 
+systemctl start httpd
+systemctl enable httpd
+
+#install dependencies
+yum module reset php -y
+yum module enable php:remi-7.4 -y
+yum install php php-common php-mbstring php-opcache php-intl php-xml php-gd php-curl php-mysqlnd php-fpm php-json -y
+systemctl start php-fpm
+systemctl enable php-fpm
+
+#download wordpress
+wget http://wordpress.org/latest.tar.gz
+
+#setup wordpress
+tar xzvf latest.tar.gz
+rm -rf latest.tar.gz
+cp wordpress/wp-config-sample.php wordpress/wp-config.php
+mkdir /var/www/html/
+cp -R /wordpress/* /var/www/html/
+
+#create healthstatus file
+cd /var/www/html/
+touch healthstatus
+
+#changing the localhost to RDS endpoint
+sed -i "s/localhost/narbyd-database.cwndedhlcmgg.us-east-1.rds.amazonaws.com/g" wp-config.php
+
+#set up the username and password 
+sed -i "s/username_here/narbyd/g" wp-config.php 
+sed -i "s/password_here/sa4la2xa/g" wp-config.php 
+sed -i "s/database_name_here/wordpressdb/g" wp-config.php 
+chcon -t httpd_sys_rw_content_t /var/www/html/ -R
+systemctl restart httpd
+```
+
+![](./images/wt1.PNG)
+![](./images/wt2.PNG)
+![](./images/wt3.PNG)
+![](./images/wt4.PNG)
+![](./images/wt5.PNG)
+
+![](./images/sac.PNG)
+
+For Tooling
+
+We will create the lauch template using the user data below
+
+```
+#!/bin/bash
+mkdir /var/www/
+sudo mount -t efs -o tls,accesspoint=fsap-0c6229307091b5b33 fs-039addedc443b6916:/ /var/www/
+yum install -y httpd 
+systemctl start httpd
+systemctl enable httpd
+yum module reset php -y
+yum module enable php:remi-7.4 -y
+yum install -y php php-common php-mbstring php-opcache php-intl php-xml php-gd php-curl php-mysqlnd php-fpm php-json
+systemctl start php-fpm
+systemctl enable php-fpm
+git clone https://github.com/dybran/tooling.git
+mkdir /var/www/html
+cp -R /tooling/html/*  /var/www/html/
+cd /tooling
+mysql -h narbyd-database.cwndedhlcmgg.us-east-1.rds.amazonaws.com -u narbyd -p toolingdb < tooling-db.sql
+cd /var/www/html/
+touch healthstatus
+sed -i "s/$db = mysqli_connect('mysql.tooling.svc.cluster.local', 'admin', 'admin', 'tooling');/$db = mysqli_connect('narbyd-database.cwndedhlcmgg.us-east-1.rds.amazonaws.com', 'narbyd', 'sa4la2xa', 'toolingdb');/g" functions.php
+chcon -t httpd_sys_rw_content_t /var/www/html/ -R
+systemctl restart httpd
+```
+![](./images/ud.PNG)
+![](./images/ud2.PNG)
+
+
+__Creating the Auto Scaling Group__
+
+We will create the auto scaling group using the lauch templates.
+
+For Bastion
+
+![](./images/asgb1.PNG)
+![](./images/asgb2.PNG)
+![](./images/asgb3.PNG)
+![](./images/asgb4.PNG)
+![](./images/asgb5.PNG)
+![](./images/asgb6.PNG)
+
+For Nginx
+
+![](./images/asgn1.PNG)
+![](./images/asgn2.PNG)
+
+Check if it is __Healthy__
+
+1[](./images/heal.PNG)
+
+Before creating the Auto Scaling Group for the webservers, we will go into the RDS and create the wordpress database
+
+Copy the __.prem key__ into the bastion host
+
+![](./images/scp1.PNG)
+
+Connect remotely to the RDs from the bastion host
+
+`$ mysql -h narbyd-database.cwndedhlcmgg.us-east-1.rds.amazonaws.com -u narbyd -p`
+
+![](./images/mys.PNG)
+![](./images/too.PNG)
+
+Create Auto Scaling Group for webserver wordpress and tooling respectively.
+
+For wordpress
+
+![](./images/asgw.PNG)
+![](./images/asgw2.PNG)
+![](./images/asgw3.PNG)
+
+For tooling
+
+![](./images/asgt1.PNG)
+
+![](./images/all.PNG)
+
+
+__N/B:__ Check for the health status of the tooling, wordpress, nginx and bastion ASG
+
+The ASG launches the Ec2 Instances from the launch templates
+
+![](./images/inst.PNG)
 
