@@ -339,6 +339,10 @@ To confirm my cert installation is successful and present in the server
 
 ![](./images/certsn.PNG)
 
+Start and enable __nginx__
+
+![](./images/Capture.PNG)
+
 __For Webserver__
 
 Run the following commands to configure the webserver instance.
