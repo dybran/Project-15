@@ -716,7 +716,19 @@ For tooling
 
 __N/B:__ Check for the health status of the tooling, wordpress, nginx and bastion ASG
 
+We can use `$ telnet <private-IP-address or DNS> <port-number> to check for connectivity between servers.
+
 The ASG launches the Ec2 Instances from the launch templates
 
 ![](./images/inst.PNG)
+
+Open the browser __incognito__ using __"CTRL + SHIFT + n"__ and paste the domain name i.e `wordpress.mydevopsproject.top` 
+
+![](./images/111.PNG)
+![](./images/112.PNG)
+![](./images/113.PNG)
+
+or `tooling.mydevopsproject.top`
+
+![](./images/tooling.PNG)
 
