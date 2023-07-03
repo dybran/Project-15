@@ -684,7 +684,7 @@ For Nginx
 
 Check if it is __Healthy__
 
-1[](./images/heal.PNG)
+![](./images/heal.PNG)
 
 Before creating the Auto Scaling Group for the webservers, we will go into the RDS and create the wordpress database
 
